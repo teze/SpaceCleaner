@@ -35,6 +35,7 @@ swiftc -O \
     CleanMyMacUnified/SpaceLensScanner.swift \
     CleanMyMacUnified/Treemap.swift \
     CleanMyMacUnified/TreemapView.swift \
+    CleanMyMacUnified/FolderSelectionMixin.swift \
     CleanMyMacUnified/ViewControllers.swift \
     CleanMyMacUnified/main.swift
 

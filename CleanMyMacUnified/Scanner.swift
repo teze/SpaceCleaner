@@ -55,27 +55,27 @@ class SystemScanner {
     }
     
     // 扫描大文件
-    static func scanLargeFiles(minSize: Int64 = 100 * 1024 * 1024, progress: @escaping (Double, String) -> Void) -> [CleanupItem] {
+    static func scanLargeFiles(in directory: URL? = nil, minSize: Int64 = 100 * 1024 * 1024, progress: @escaping (Double, String) -> Void) -> [CleanupItem] {
         var items: [CleanupItem] = []
-        let homeURL = FileManager.default.homeDirectoryForCurrentUser
+        let scanURL = directory ?? FileManager.default.homeDirectoryForCurrentUser
         
-        progress(0.0, "扫描大文件...")
+        progress(0.0, "扫描大文件: \(scanURL.lastPathComponent)...")
         
-        let foundItems = findLargeFiles(in: homeURL, minSize: minSize, maxDepth: 5)
+        let foundItems = findLargeFiles(in: scanURL, minSize: minSize, maxDepth: 5)
         items.append(contentsOf: foundItems)
         
         return items
     }
     
     // 扫描旧文件
-    static func scanOldFiles(olderThan days: Int = 30, progress: @escaping (Double, String) -> Void) -> [CleanupItem] {
+    static func scanOldFiles(in directory: URL? = nil, olderThan days: Int = 30, progress: @escaping (Double, String) -> Void) -> [CleanupItem] {
         var items: [CleanupItem] = []
-        let homeURL = FileManager.default.homeDirectoryForCurrentUser
+        let scanURL = directory ?? FileManager.default.homeDirectoryForCurrentUser
         let cutoffDate = Date().addingTimeInterval(-Double(days * 24 * 60 * 60))
         
-        progress(0.0, "扫描旧文件...")
+        progress(0.0, "扫描旧文件: \(scanURL.lastPathComponent)...")
         
-        let foundItems = findOldFiles(in: homeURL, olderThan: cutoffDate, maxDepth: 5)
+        let foundItems = findOldFiles(in: scanURL, olderThan: cutoffDate, maxDepth: 5)
         items.append(contentsOf: foundItems)
         
         return items
