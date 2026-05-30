@@ -19,6 +19,7 @@ class UnifiedViewController: NSViewController {
         case systemJunk = "系统垃圾"
         case largeFiles = "大文件"
         case oldFiles = "旧文件"
+        case duplicates = "重复文件"
         case uninstaller = "应用卸载"
         case privacy = "隐私清理"
         
@@ -29,6 +30,7 @@ class UnifiedViewController: NSViewController {
             case .systemJunk: return "trash"
             case .largeFiles: return "doc.badge.plus"
             case .oldFiles: return "clock"
+            case .duplicates: return "doc.on.doc"
             case .uninstaller: return "app.badge.minus"
             case .privacy: return "hand.raised"
             }
@@ -41,6 +43,7 @@ class UnifiedViewController: NSViewController {
             case .systemJunk: return "清理系统垃圾"
             case .largeFiles: return "查找大文件"
             case .oldFiles: return "查找旧文件"
+            case .duplicates: return "查找重复文件"
             case .uninstaller: return "完全卸载应用"
             case .privacy: return "清理隐私数据"
             }
@@ -146,10 +149,12 @@ class UnifiedViewController: NSViewController {
             viewController = CleanupViewController(category: .largeFiles)
         case .oldFiles:
             viewController = CleanupViewController(category: .oldFiles)
+        case .duplicates:
+            viewController = DuplicateFilesViewController()
         case .uninstaller:
-            viewController = PlaceholderViewController(title: "应用卸载", message: "即将推出")
+            viewController = UninstallerViewController()
         case .privacy:
-            viewController = PlaceholderViewController(title: "隐私清理", message: "即将推出")
+            viewController = PrivacyViewController()
         }
         
         currentViewController = viewController

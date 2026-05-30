@@ -4,9 +4,14 @@ import Foundation
 // 智能扫描视图控制器
 class SmartScanViewController: NSViewController {
     var scanButton: NSButton!
+    var cleanButton: NSButton!
+    var selectAllButton: NSButton!
+    var deselectAllButton: NSButton!
     var statusLabel: NSTextField!
-    var resultLabel: NSTextField!
+    var selectionLabel: NSTextField!
     var progressIndicator: NSProgressIndicator!
+    var tableView: NSTableView!
+    var items: [CleanupItem] = []
     
     override func loadView() {
         self.view = NSView(frame: NSRect(x: 0, y: 0, width: 949, height: 700))
@@ -20,44 +25,131 @@ class SmartScanViewController: NSViewController {
     func setupUI() {
         // 标题
         let titleLabel = NSTextField(labelWithString: "智能扫描")
-        titleLabel.frame = NSRect(x: 50, y: 620, width: 300, height: 40)
-        titleLabel.font = NSFont.systemFont(ofSize: 32, weight: .bold)
+        titleLabel.frame = NSRect(x: 30, y: 650, width: 300, height: 30)
+        titleLabel.font = NSFont.systemFont(ofSize: 24, weight: .bold)
         view.addSubview(titleLabel)
         
         let descLabel = NSTextField(labelWithString: "一键扫描系统垃圾、大文件和旧文件")
-        descLabel.frame = NSRect(x: 50, y: 590, width: 500, height: 20)
-        descLabel.font = NSFont.systemFont(ofSize: 14)
+        descLabel.frame = NSRect(x: 30, y: 630, width: 500, height: 18)
+        descLabel.font = NSFont.systemFont(ofSize: 13)
         descLabel.textColor = NSColor.secondaryLabelColor
         view.addSubview(descLabel)
         
-        // 扫描按钮
-        scanButton = NSButton(frame: NSRect(x: 375, y: 300, width: 200, height: 50))
+        // 选择统计标签
+        selectionLabel = NSTextField(labelWithString: "")
+        selectionLabel.frame = NSRect(x: 30, y: 605, width: 500, height: 18)
+        selectionLabel.font = NSFont.systemFont(ofSize: 12)
+        selectionLabel.textColor = NSColor.systemBlue
+        view.addSubview(selectionLabel)
+        
+        // 表格
+        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: 889, height: 510))
+        scrollView.hasVerticalScroller = true
+        scrollView.borderType = .bezelBorder
+        
+        tableView = NSTableView(frame: scrollView.bounds)
+        tableView.rowHeight = 32
+        tableView.usesAlternatingRowBackgroundColors = true
+        
+        // 勾选框列
+        let checkColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("check"))
+        checkColumn.title = "✓"
+        checkColumn.width = 40
+        tableView.addTableColumn(checkColumn)
+        
+        // 类别列
+        let categoryColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("category"))
+        categoryColumn.title = "类别"
+        categoryColumn.width = 100
+        tableView.addTableColumn(categoryColumn)
+        
+        let nameColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("name"))
+        nameColumn.title = "名称"
+        nameColumn.width = 300
+        tableView.addTableColumn(nameColumn)
+        
+        let sizeColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("size"))
+        sizeColumn.title = "大小"
+        sizeColumn.width = 100
+        tableView.addTableColumn(sizeColumn)
+        
+        let pathColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("path"))
+        pathColumn.title = "路径"
+        pathColumn.width = 330
+        tableView.addTableColumn(pathColumn)
+        
+        tableView.delegate = self
+        tableView.dataSource = self
+        
+        scrollView.documentView = tableView
+        view.addSubview(scrollView)
+        
+        // 底部按钮
+        selectAllButton = NSButton(frame: NSRect(x: 30, y: 20, width: 80, height: 32))
+        selectAllButton.title = "全选"
+        selectAllButton.bezelStyle = .rounded
+        selectAllButton.target = self
+        selectAllButton.action = #selector(selectAllItems)
+        selectAllButton.isEnabled = false
+        view.addSubview(selectAllButton)
+        
+        deselectAllButton = NSButton(frame: NSRect(x: 120, y: 20, width: 80, height: 32))
+        deselectAllButton.title = "取消全选"
+        deselectAllButton.bezelStyle = .rounded
+        deselectAllButton.target = self
+        deselectAllButton.action = #selector(deselectAllItems)
+        deselectAllButton.isEnabled = false
+        view.addSubview(deselectAllButton)
+        
+        scanButton = NSButton(frame: NSRect(x: 350, y: 20, width: 120, height: 32))
         scanButton.title = "开始扫描"
         scanButton.bezelStyle = .rounded
-        scanButton.font = NSFont.systemFont(ofSize: 16, weight: .medium)
         scanButton.target = self
         scanButton.action = #selector(startScan)
         view.addSubview(scanButton)
         
-        // 进度指示器
-        progressIndicator = NSProgressIndicator(frame: NSRect(x: 445, y: 260, width: 60, height: 60))
+        cleanButton = NSButton(frame: NSRect(x: 490, y: 20, width: 120, height: 32))
+        cleanButton.title = "清理选中项"
+        cleanButton.bezelStyle = .rounded
+        cleanButton.target = self
+        cleanButton.action = #selector(startClean)
+        cleanButton.isEnabled = false
+        view.addSubview(cleanButton)
+        
+        progressIndicator = NSProgressIndicator(frame: NSRect(x: 630, y: 25, width: 20, height: 20))
         progressIndicator.style = .spinning
         progressIndicator.isHidden = true
         view.addSubview(progressIndicator)
         
-        // 状态标签
         statusLabel = NSTextField(labelWithString: "")
-        statusLabel.frame = NSRect(x: 300, y: 220, width: 350, height: 20)
-        statusLabel.alignment = .center
-        statusLabel.font = NSFont.systemFont(ofSize: 13)
+        statusLabel.frame = NSRect(x: 660, y: 27, width: 250, height: 18)
+        statusLabel.font = NSFont.systemFont(ofSize: 12)
         view.addSubview(statusLabel)
+    }
+    
+    @objc func selectAllItems() {
+        for i in 0..<items.count {
+            items[i].isSelected = true
+        }
+        tableView.reloadData()
+        updateSelectionLabel()
+    }
+    
+    @objc func deselectAllItems() {
+        for i in 0..<items.count {
+            items[i].isSelected = false
+        }
+        tableView.reloadData()
+        updateSelectionLabel()
+    }
+    
+    func updateSelectionLabel() {
+        let selectedItems = items.filter { $0.isSelected }
+        let selectedSize = selectedItems.reduce(0) { $0 + $1.size }
+        let sizeStr = ByteCountFormatter.string(fromByteCount: selectedSize, countStyle: .file)
+        selectionLabel.stringValue = "已选择 \(selectedItems.count) 个项目，共 \(sizeStr)"
         
-        // 结果标签
-        resultLabel = NSTextField(labelWithString: "")
-        resultLabel.frame = NSRect(x: 200, y: 150, width: 550, height: 60)
-        resultLabel.alignment = .center
-        resultLabel.font = NSFont.systemFont(ofSize: 16)
-        view.addSubview(resultLabel)
+        cleanButton.isEnabled = !selectedItems.isEmpty
     }
     
     @objc func startScan() {
@@ -65,33 +157,174 @@ class SmartScanViewController: NSViewController {
         progressIndicator.isHidden = false
         progressIndicator.startAnimation(nil)
         statusLabel.stringValue = "正在扫描..."
-        resultLabel.stringValue = ""
+        items = []
+        tableView.reloadData()
         
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             var allItems: [CleanupItem] = []
-            var totalSize: Int64 = 0
             
             // 扫描各个类别
             for category in [CleanupCategory.systemJunk, .userCache, .appCache, .logs, .trash] {
-                let items = SystemScanner.scan(category: category) { _, _ in }
-                allItems.append(contentsOf: items)
-                totalSize += items.reduce(0) { $0 + $1.size }
+                let categoryItems = SystemScanner.scan(category: category) { _, _ in }
+                allItems.append(contentsOf: categoryItems)
             }
             
             // 扫描大文件
             let largeFiles = SystemScanner.scanLargeFiles { _, _ in }
             allItems.append(contentsOf: largeFiles)
-            totalSize += largeFiles.reduce(0) { $0 + $1.size }
             
             DispatchQueue.main.async {
+                self?.items = allItems
+                self?.tableView.reloadData()
                 self?.scanButton.isEnabled = true
+                self?.selectAllButton.isEnabled = !allItems.isEmpty
+                self?.deselectAllButton.isEnabled = !allItems.isEmpty
                 self?.progressIndicator.stopAnimation(nil)
                 self?.progressIndicator.isHidden = true
-                self?.statusLabel.stringValue = "扫描完成！"
                 
+                let totalSize = allItems.reduce(0) { $0 + $1.size }
                 let sizeStr = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
-                self?.resultLabel.stringValue = "找到 \(allItems.count) 个项目\n可释放 \(sizeStr) 空间"
+                self?.statusLabel.stringValue = "找到 \(allItems.count) 个项目，共 \(sizeStr)"
+                self?.updateSelectionLabel()
             }
+        }
+    }
+    
+    @objc func startClean() {
+        let selectedItems = items.filter { $0.isSelected }
+        
+        if selectedItems.isEmpty {
+            let alert = NSAlert()
+            alert.messageText = "没有选中项目"
+            alert.informativeText = "请先选择要清理的项目"
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "好的")
+            alert.runModal()
+            return
+        }
+        
+        let alert = NSAlert()
+        alert.messageText = "确认清理"
+        let totalSize = selectedItems.reduce(0) { $0 + $1.size }
+        let sizeStr = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+        alert.informativeText = "将清理 \(selectedItems.count) 个项目，释放约 \(sizeStr) 空间\n\n文件将被移到废纸篓，可以恢复。"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "清理")
+        alert.addButton(withTitle: "取消")
+        
+        if alert.runModal() == .alertFirstButtonReturn {
+            cleanButton.isEnabled = false
+            scanButton.isEnabled = false
+            selectAllButton.isEnabled = false
+            deselectAllButton.isEnabled = false
+            progressIndicator.isHidden = false
+            progressIndicator.startAnimation(nil)
+            statusLabel.stringValue = "清理中..."
+            
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let self = self else { return }
+                
+                let result = SystemScanner.cleanup(items: selectedItems) { current, total, message in
+                    DispatchQueue.main.async {
+                        self.statusLabel.stringValue = "清理中... (\(current)/\(total))"
+                    }
+                }
+                
+                DispatchQueue.main.async {
+                    self.progressIndicator.stopAnimation(nil)
+                    self.progressIndicator.isHidden = true
+                    self.scanButton.isEnabled = true
+                    
+                    if result.failed == 0 {
+                        let successAlert = NSAlert()
+                        successAlert.messageText = "清理完成"
+                        successAlert.informativeText = "成功清理 \(result.success) 个项目"
+                        successAlert.alertStyle = .informational
+                        successAlert.addButton(withTitle: "好的")
+                        successAlert.runModal()
+                        
+                        // 移除已清理的项目
+                        self.items.removeAll { $0.isSelected }
+                        self.tableView.reloadData()
+                        self.selectAllButton.isEnabled = !self.items.isEmpty
+                        self.deselectAllButton.isEnabled = !self.items.isEmpty
+                        self.updateSelectionLabel()
+                        
+                        if self.items.isEmpty {
+                            self.statusLabel.stringValue = "所有项目已清理"
+                        } else {
+                            let remainingSize = self.items.reduce(0) { $0 + $1.size }
+                            let sizeStr = ByteCountFormatter.string(fromByteCount: remainingSize, countStyle: .file)
+                            self.statusLabel.stringValue = "剩余 \(self.items.count) 个项目，共 \(sizeStr)"
+                        }
+                    } else {
+                        let errorAlert = NSAlert()
+                        errorAlert.messageText = "清理完成（部分失败）"
+                        errorAlert.informativeText = "成功: \(result.success) 个\n失败: \(result.failed) 个\n\n失败原因：\n\(result.errors.prefix(5).joined(separator: "\n"))"
+                        errorAlert.alertStyle = .warning
+                        errorAlert.addButton(withTitle: "好的")
+                        errorAlert.runModal()
+                        
+                        self.startScan()
+                    }
+                }
+            }
+        }
+    }
+}
+
+extension SmartScanViewController: NSTableViewDataSource, NSTableViewDelegate {
+    func numberOfRows(in tableView: NSTableView) -> Int {
+        return items.count
+    }
+    
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        guard row < items.count else { return nil }
+        let item = items[row]
+        
+        let identifier = tableColumn?.identifier.rawValue ?? ""
+        
+        if identifier == "check" {
+            let cell = NSTableCellView()
+            let checkbox = NSButton(checkboxWithTitle: "", target: self, action: #selector(checkboxToggled(_:)))
+            checkbox.frame = NSRect(x: 10, y: 6, width: 20, height: 20)
+            checkbox.state = item.isSelected ? .on : .off
+            checkbox.tag = row
+            cell.addSubview(checkbox)
+            return cell
+        }
+        
+        let cell = NSTableCellView()
+        let textField = NSTextField(labelWithString: "")
+        textField.frame = NSRect(x: 5, y: 6, width: tableColumn?.width ?? 100 - 10, height: 20)
+        
+        switch identifier {
+        case "category":
+            textField.stringValue = item.category.rawValue
+            textField.font = NSFont.systemFont(ofSize: 11)
+            textField.textColor = NSColor.systemBlue
+        case "name":
+            textField.stringValue = item.name
+        case "size":
+            textField.stringValue = item.formattedSize
+            textField.alignment = .right
+        case "path":
+            textField.stringValue = item.path
+            textField.textColor = NSColor.secondaryLabelColor
+            textField.font = NSFont.systemFont(ofSize: 11)
+        default:
+            break
+        }
+        
+        cell.addSubview(textField)
+        return cell
+    }
+    
+    @objc func checkboxToggled(_ sender: NSButton) {
+        let row = sender.tag
+        if row < items.count {
+            items[row].isSelected = (sender.state == .on)
+            updateSelectionLabel()
         }
     }
 }
@@ -558,6 +791,962 @@ extension CleanupViewController: NSTableViewDataSource, NSTableViewDelegate {
         
         if identifier == "check" {
             // 勾选框
+            let cell = NSTableCellView()
+            let checkbox = NSButton(checkboxWithTitle: "", target: self, action: #selector(checkboxToggled(_:)))
+            checkbox.frame = NSRect(x: 10, y: 6, width: 20, height: 20)
+            checkbox.state = item.isSelected ? .on : .off
+            checkbox.tag = row
+            cell.addSubview(checkbox)
+            return cell
+        }
+        
+        let cell = NSTableCellView()
+        let textField = NSTextField(labelWithString: "")
+        textField.frame = NSRect(x: 5, y: 6, width: tableColumn?.width ?? 100 - 10, height: 20)
+        
+        switch identifier {
+        case "name":
+            textField.stringValue = item.name
+        case "size":
+            textField.stringValue = item.formattedSize
+            textField.alignment = .right
+        case "path":
+            textField.stringValue = item.path
+            textField.textColor = NSColor.secondaryLabelColor
+            textField.font = NSFont.systemFont(ofSize: 11)
+        default:
+            break
+        }
+        
+        cell.addSubview(textField)
+        return cell
+    }
+    
+    @objc func checkboxToggled(_ sender: NSButton) {
+        let row = sender.tag
+        if row < items.count {
+            items[row].isSelected = (sender.state == .on)
+            updateSelectionLabel()
+        }
+    }
+}
+
+// 重复文件视图控制器
+class DuplicateFilesViewController: NSViewController {
+    var tableView: NSTableView!
+    var scanButton: NSButton!
+    var cleanButton: NSButton!
+    var selectAllButton: NSButton!
+    var deselectAllButton: NSButton!
+    var progressIndicator: NSProgressIndicator!
+    var statusLabel: NSTextField!
+    var selectionLabel: NSTextField!
+    var duplicateGroups: [[CleanupItem]] = []
+    var flattenedItems: [CleanupItem] = []
+    
+    override func loadView() {
+        self.view = NSView(frame: NSRect(x: 0, y: 0, width: 949, height: 700))
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+    }
+    
+    func setupUI() {
+        // 标题
+        let titleLabel = NSTextField(labelWithString: "重复文件")
+        titleLabel.frame = NSRect(x: 30, y: 650, width: 300, height: 30)
+        titleLabel.font = NSFont.systemFont(ofSize: 24, weight: .bold)
+        view.addSubview(titleLabel)
+        
+        let descLabel = NSTextField(labelWithString: "查找并删除重复的文件（基于 MD5 哈希）")
+        descLabel.frame = NSRect(x: 30, y: 630, width: 500, height: 18)
+        descLabel.font = NSFont.systemFont(ofSize: 13)
+        descLabel.textColor = NSColor.secondaryLabelColor
+        view.addSubview(descLabel)
+        
+        // 选择统计标签
+        selectionLabel = NSTextField(labelWithString: "")
+        selectionLabel.frame = NSRect(x: 30, y: 605, width: 500, height: 18)
+        selectionLabel.font = NSFont.systemFont(ofSize: 12)
+        selectionLabel.textColor = NSColor.systemBlue
+        view.addSubview(selectionLabel)
+        
+        // 表格
+        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: 889, height: 510))
+        scrollView.hasVerticalScroller = true
+        scrollView.borderType = .bezelBorder
+        
+        tableView = NSTableView(frame: scrollView.bounds)
+        tableView.rowHeight = 32
+        tableView.usesAlternatingRowBackgroundColors = true
+        
+        // 勾选框列
+        let checkColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("check"))
+        checkColumn.title = "✓"
+        checkColumn.width = 40
+        tableView.addTableColumn(checkColumn)
+        
+        // 组号列
+        let groupColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("group"))
+        groupColumn.title = "组"
+        groupColumn.width = 50
+        tableView.addTableColumn(groupColumn)
+        
+        let nameColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("name"))
+        nameColumn.title = "名称"
+        nameColumn.width = 300
+        tableView.addTableColumn(nameColumn)
+        
+        let sizeColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("size"))
+        sizeColumn.title = "大小"
+        sizeColumn.width = 100
+        tableView.addTableColumn(sizeColumn)
+        
+        let pathColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("path"))
+        pathColumn.title = "路径"
+        pathColumn.width = 380
+        tableView.addTableColumn(pathColumn)
+        
+        tableView.delegate = self
+        tableView.dataSource = self
+        
+        scrollView.documentView = tableView
+        view.addSubview(scrollView)
+        
+        // 底部按钮
+        selectAllButton = NSButton(frame: NSRect(x: 30, y: 20, width: 100, height: 32))
+        selectAllButton.title = "选择副本"
+        selectAllButton.bezelStyle = .rounded
+        selectAllButton.target = self
+        selectAllButton.action = #selector(selectDuplicates)
+        selectAllButton.isEnabled = false
+        view.addSubview(selectAllButton)
+        
+        deselectAllButton = NSButton(frame: NSRect(x: 140, y: 20, width: 80, height: 32))
+        deselectAllButton.title = "取消全选"
+        deselectAllButton.bezelStyle = .rounded
+        deselectAllButton.target = self
+        deselectAllButton.action = #selector(deselectAllItems)
+        deselectAllButton.isEnabled = false
+        view.addSubview(deselectAllButton)
+        
+        scanButton = NSButton(frame: NSRect(x: 350, y: 20, width: 120, height: 32))
+        scanButton.title = "开始扫描"
+        scanButton.bezelStyle = .rounded
+        scanButton.target = self
+        scanButton.action = #selector(startScan)
+        view.addSubview(scanButton)
+        
+        cleanButton = NSButton(frame: NSRect(x: 490, y: 20, width: 120, height: 32))
+        cleanButton.title = "清理选中项"
+        cleanButton.bezelStyle = .rounded
+        cleanButton.target = self
+        cleanButton.action = #selector(startClean)
+        cleanButton.isEnabled = false
+        view.addSubview(cleanButton)
+        
+        progressIndicator = NSProgressIndicator(frame: NSRect(x: 630, y: 25, width: 20, height: 20))
+        progressIndicator.style = .spinning
+        progressIndicator.isHidden = true
+        view.addSubview(progressIndicator)
+        
+        statusLabel = NSTextField(labelWithString: "")
+        statusLabel.frame = NSRect(x: 660, y: 27, width: 250, height: 18)
+        statusLabel.font = NSFont.systemFont(ofSize: 12)
+        view.addSubview(statusLabel)
+    }
+    
+    @objc func selectDuplicates() {
+        // 每组保留第一个文件（通常是最早的），选中其他副本
+        for group in duplicateGroups {
+            if group.count > 1 {
+                // 第一个不选中（保留）
+                if let firstIndex = flattenedItems.firstIndex(where: { $0.path == group[0].path }) {
+                    flattenedItems[firstIndex].isSelected = false
+                }
+                // 其他的选中（删除）
+                for i in 1..<group.count {
+                    if let index = flattenedItems.firstIndex(where: { $0.path == group[i].path }) {
+                        flattenedItems[index].isSelected = true
+                    }
+                }
+            }
+        }
+        tableView.reloadData()
+        updateSelectionLabel()
+    }
+    
+    @objc func deselectAllItems() {
+        for i in 0..<flattenedItems.count {
+            flattenedItems[i].isSelected = false
+        }
+        tableView.reloadData()
+        updateSelectionLabel()
+    }
+    
+    func updateSelectionLabel() {
+        let selectedItems = flattenedItems.filter { $0.isSelected }
+        let selectedSize = selectedItems.reduce(0) { $0 + $1.size }
+        let sizeStr = ByteCountFormatter.string(fromByteCount: selectedSize, countStyle: .file)
+        selectionLabel.stringValue = "已选择 \(selectedItems.count) 个项目，共 \(sizeStr)"
+        
+        cleanButton.isEnabled = !selectedItems.isEmpty
+    }
+    
+    @objc func startScan() {
+        scanButton.isEnabled = false
+        progressIndicator.isHidden = false
+        progressIndicator.startAnimation(nil)
+        statusLabel.stringValue = "正在扫描..."
+        duplicateGroups = []
+        flattenedItems = []
+        tableView.reloadData()
+        
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let groups = SystemScanner.scanDuplicateFiles(minSize: 1024 * 1024) { progress, message in
+                DispatchQueue.main.async {
+                    self?.statusLabel.stringValue = message
+                }
+            }
+            
+            DispatchQueue.main.async {
+                self?.duplicateGroups = groups
+                
+                // 展平所有项目用于表格显示
+                var allItems: [CleanupItem] = []
+                for group in groups {
+                    allItems.append(contentsOf: group)
+                }
+                self?.flattenedItems = allItems
+                
+                self?.tableView.reloadData()
+                self?.scanButton.isEnabled = true
+                self?.selectAllButton.isEnabled = !groups.isEmpty
+                self?.deselectAllButton.isEnabled = !groups.isEmpty
+                self?.progressIndicator.stopAnimation(nil)
+                self?.progressIndicator.isHidden = true
+                
+                let totalSize = allItems.reduce(0) { $0 + $1.size }
+                let duplicateSize = groups.reduce(0) { total, group in
+                    // 每组的重复大小 = (组内文件数 - 1) * 单个文件大小
+                    return total + (Int64(group.count - 1) * group[0].size)
+                }
+                let sizeStr = ByteCountFormatter.string(fromByteCount: duplicateSize, countStyle: .file)
+                self?.statusLabel.stringValue = "找到 \(groups.count) 组重复文件，可释放 \(sizeStr)"
+                self?.updateSelectionLabel()
+            }
+        }
+    }
+    
+    @objc func startClean() {
+        let selectedItems = flattenedItems.filter { $0.isSelected }
+        
+        if selectedItems.isEmpty {
+            let alert = NSAlert()
+            alert.messageText = "没有选中项目"
+            alert.informativeText = "请先选择要清理的项目"
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "好的")
+            alert.runModal()
+            return
+        }
+        
+        let alert = NSAlert()
+        alert.messageText = "确认清理"
+        let totalSize = selectedItems.reduce(0) { $0 + $1.size }
+        let sizeStr = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+        alert.informativeText = "将清理 \(selectedItems.count) 个重复文件，释放约 \(sizeStr) 空间\n\n文件将被移到废纸篓，可以恢复。"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "清理")
+        alert.addButton(withTitle: "取消")
+        
+        if alert.runModal() == .alertFirstButtonReturn {
+            cleanButton.isEnabled = false
+            scanButton.isEnabled = false
+            selectAllButton.isEnabled = false
+            deselectAllButton.isEnabled = false
+            progressIndicator.isHidden = false
+            progressIndicator.startAnimation(nil)
+            statusLabel.stringValue = "清理中..."
+            
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let self = self else { return }
+                
+                let result = SystemScanner.cleanup(items: selectedItems) { current, total, message in
+                    DispatchQueue.main.async {
+                        self.statusLabel.stringValue = "清理中... (\(current)/\(total))"
+                    }
+                }
+                
+                DispatchQueue.main.async {
+                    self.progressIndicator.stopAnimation(nil)
+                    self.progressIndicator.isHidden = true
+                    self.scanButton.isEnabled = true
+                    
+                    if result.failed == 0 {
+                        let successAlert = NSAlert()
+                        successAlert.messageText = "清理完成"
+                        successAlert.informativeText = "成功清理 \(result.success) 个重复文件"
+                        successAlert.alertStyle = .informational
+                        successAlert.addButton(withTitle: "好的")
+                        successAlert.runModal()
+                        
+                        // 移除已清理的项目
+                        self.flattenedItems.removeAll { $0.isSelected }
+                        
+                        // 重新构建组
+                        var newGroups: [[CleanupItem]] = []
+                        for group in self.duplicateGroups {
+                            let remainingInGroup = group.filter { item in
+                                self.flattenedItems.contains { $0.path == item.path }
+                            }
+                            if remainingInGroup.count > 1 {
+                                newGroups.append(remainingInGroup)
+                            }
+                        }
+                        self.duplicateGroups = newGroups
+                        
+                        self.tableView.reloadData()
+                        self.selectAllButton.isEnabled = !self.flattenedItems.isEmpty
+                        self.deselectAllButton.isEnabled = !self.flattenedItems.isEmpty
+                        self.updateSelectionLabel()
+                        
+                        if self.flattenedItems.isEmpty {
+                            self.statusLabel.stringValue = "所有重复文件已清理"
+                        } else {
+                            self.statusLabel.stringValue = "剩余 \(self.duplicateGroups.count) 组重复文件"
+                        }
+                    } else {
+                        let errorAlert = NSAlert()
+                        errorAlert.messageText = "清理完成（部分失败）"
+                        errorAlert.informativeText = "成功: \(result.success) 个\n失败: \(result.failed) 个\n\n失败原因：\n\(result.errors.prefix(5).joined(separator: "\n"))"
+                        errorAlert.alertStyle = .warning
+                        errorAlert.addButton(withTitle: "好的")
+                        errorAlert.runModal()
+                        
+                        self.startScan()
+                    }
+                }
+            }
+        }
+    }
+}
+
+extension DuplicateFilesViewController: NSTableViewDataSource, NSTableViewDelegate {
+    func numberOfRows(in tableView: NSTableView) -> Int {
+        return flattenedItems.count
+    }
+    
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        guard row < flattenedItems.count else { return nil }
+        let item = flattenedItems[row]
+        
+        let identifier = tableColumn?.identifier.rawValue ?? ""
+        
+        if identifier == "check" {
+            let cell = NSTableCellView()
+            let checkbox = NSButton(checkboxWithTitle: "", target: self, action: #selector(checkboxToggled(_:)))
+            checkbox.frame = NSRect(x: 10, y: 6, width: 20, height: 20)
+            checkbox.state = item.isSelected ? .on : .off
+            checkbox.tag = row
+            cell.addSubview(checkbox)
+            return cell
+        }
+        
+        let cell = NSTableCellView()
+        let textField = NSTextField(labelWithString: "")
+        textField.frame = NSRect(x: 5, y: 6, width: tableColumn?.width ?? 100 - 10, height: 20)
+        
+        switch identifier {
+        case "group":
+            // 找到这个文件属于哪一组
+            var groupNumber = 0
+            for (index, group) in duplicateGroups.enumerated() {
+                if group.contains(where: { $0.path == item.path }) {
+                    groupNumber = index + 1
+                    break
+                }
+            }
+            textField.stringValue = "#\(groupNumber)"
+            textField.alignment = .center
+            textField.textColor = NSColor.systemBlue
+            textField.font = NSFont.systemFont(ofSize: 11, weight: .medium)
+        case "name":
+            textField.stringValue = item.name
+        case "size":
+            textField.stringValue = item.formattedSize
+            textField.alignment = .right
+        case "path":
+            textField.stringValue = item.path
+            textField.textColor = NSColor.secondaryLabelColor
+            textField.font = NSFont.systemFont(ofSize: 11)
+        default:
+            break
+        }
+        
+        cell.addSubview(textField)
+        return cell
+    }
+    
+    @objc func checkboxToggled(_ sender: NSButton) {
+        let row = sender.tag
+        if row < flattenedItems.count {
+            flattenedItems[row].isSelected = (sender.state == .on)
+            updateSelectionLabel()
+        }
+    }
+}
+
+// 应用卸载视图控制器
+class UninstallerViewController: NSViewController {
+    var tableView: NSTableView!
+    var scanButton: NSButton!
+    var uninstallButton: NSButton!
+    var progressIndicator: NSProgressIndicator!
+    var statusLabel: NSTextField!
+    var selectionLabel: NSTextField!
+    var apps: [AppInfo] = []
+    var selectedApp: AppInfo?
+    var relatedFiles: [CleanupItem] = []
+    
+    override func loadView() {
+        self.view = NSView(frame: NSRect(x: 0, y: 0, width: 949, height: 700))
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        startScan()  // 自动扫描
+    }
+    
+    func setupUI() {
+        // 标题
+        let titleLabel = NSTextField(labelWithString: "应用卸载")
+        titleLabel.frame = NSRect(x: 30, y: 650, width: 300, height: 30)
+        titleLabel.font = NSFont.systemFont(ofSize: 24, weight: .bold)
+        view.addSubview(titleLabel)
+        
+        let descLabel = NSTextField(labelWithString: "完全卸载应用及其相关文件")
+        descLabel.frame = NSRect(x: 30, y: 630, width: 500, height: 18)
+        descLabel.font = NSFont.systemFont(ofSize: 13)
+        descLabel.textColor = NSColor.secondaryLabelColor
+        view.addSubview(descLabel)
+        
+        // 选择统计标签
+        selectionLabel = NSTextField(labelWithString: "")
+        selectionLabel.frame = NSRect(x: 30, y: 605, width: 500, height: 18)
+        selectionLabel.font = NSFont.systemFont(ofSize: 12)
+        selectionLabel.textColor = NSColor.systemBlue
+        view.addSubview(selectionLabel)
+        
+        // 表格
+        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: 889, height: 510))
+        scrollView.hasVerticalScroller = true
+        scrollView.borderType = .bezelBorder
+        
+        tableView = NSTableView(frame: scrollView.bounds)
+        tableView.rowHeight = 40
+        tableView.usesAlternatingRowBackgroundColors = true
+        
+        let nameColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("name"))
+        nameColumn.title = "应用名称"
+        nameColumn.width = 300
+        tableView.addTableColumn(nameColumn)
+        
+        let versionColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("version"))
+        versionColumn.title = "版本"
+        versionColumn.width = 100
+        tableView.addTableColumn(versionColumn)
+        
+        let sizeColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("size"))
+        sizeColumn.title = "大小"
+        sizeColumn.width = 100
+        tableView.addTableColumn(sizeColumn)
+        
+        let pathColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("path"))
+        pathColumn.title = "路径"
+        pathColumn.width = 370
+        tableView.addTableColumn(pathColumn)
+        
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.target = self
+        tableView.doubleAction = #selector(showAppDetails)
+        
+        scrollView.documentView = tableView
+        view.addSubview(scrollView)
+        
+        // 底部按钮
+        scanButton = NSButton(frame: NSRect(x: 350, y: 20, width: 120, height: 32))
+        scanButton.title = "刷新列表"
+        scanButton.bezelStyle = .rounded
+        scanButton.target = self
+        scanButton.action = #selector(startScan)
+        view.addSubview(scanButton)
+        
+        uninstallButton = NSButton(frame: NSRect(x: 490, y: 20, width: 120, height: 32))
+        uninstallButton.title = "卸载应用"
+        uninstallButton.bezelStyle = .rounded
+        uninstallButton.target = self
+        uninstallButton.action = #selector(uninstallApp)
+        uninstallButton.isEnabled = false
+        view.addSubview(uninstallButton)
+        
+        progressIndicator = NSProgressIndicator(frame: NSRect(x: 630, y: 25, width: 20, height: 20))
+        progressIndicator.style = .spinning
+        progressIndicator.isHidden = true
+        view.addSubview(progressIndicator)
+        
+        statusLabel = NSTextField(labelWithString: "")
+        statusLabel.frame = NSRect(x: 660, y: 27, width: 250, height: 18)
+        statusLabel.font = NSFont.systemFont(ofSize: 12)
+        view.addSubview(statusLabel)
+    }
+    
+    @objc func startScan() {
+        scanButton.isEnabled = false
+        progressIndicator.isHidden = false
+        progressIndicator.startAnimation(nil)
+        statusLabel.stringValue = "正在扫描..."
+        
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let scannedApps = SystemScanner.scanInstalledApps { progress, message in
+                DispatchQueue.main.async {
+                    self?.statusLabel.stringValue = message
+                }
+            }
+            
+            DispatchQueue.main.async {
+                self?.apps = scannedApps
+                self?.tableView.reloadData()
+                self?.scanButton.isEnabled = true
+                self?.progressIndicator.stopAnimation(nil)
+                self?.progressIndicator.isHidden = true
+                self?.statusLabel.stringValue = "找到 \(scannedApps.count) 个应用"
+            }
+        }
+    }
+    
+    @objc func showAppDetails() {
+        let row = tableView.selectedRow
+        guard row >= 0 && row < apps.count else { return }
+        
+        let app = apps[row]
+        selectedApp = app
+        uninstallButton.isEnabled = true
+        
+        // 显示应用详情
+        selectionLabel.stringValue = "已选择: \(app.name) (\(app.formattedSize))"
+        
+        // 查找相关文件
+        statusLabel.stringValue = "查找相关文件..."
+        progressIndicator.isHidden = false
+        progressIndicator.startAnimation(nil)
+        
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let files = SystemScanner.findAppRelatedFiles(for: app) { progress, message in
+                DispatchQueue.main.async {
+                    self?.statusLabel.stringValue = message
+                }
+            }
+            
+            DispatchQueue.main.async {
+                self?.relatedFiles = files
+                self?.progressIndicator.stopAnimation(nil)
+                self?.progressIndicator.isHidden = true
+                
+                let totalSize = files.reduce(0) { $0 + $1.size } + app.size
+                let sizeStr = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+                self?.statusLabel.stringValue = "找到 \(files.count) 个相关文件，总计 \(sizeStr)"
+            }
+        }
+    }
+    
+    @objc func uninstallApp() {
+        guard let app = selectedApp else { return }
+        
+        let alert = NSAlert()
+        alert.messageText = "确认卸载"
+        let totalSize = relatedFiles.reduce(0) { $0 + $1.size } + app.size
+        let sizeStr = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+        alert.informativeText = "将卸载 \(app.name) 及其 \(relatedFiles.count) 个相关文件\n总计: \(sizeStr)\n\n文件将被移到废纸篓，可以恢复。"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "卸载")
+        alert.addButton(withTitle: "取消")
+        
+        if alert.runModal() == .alertFirstButtonReturn {
+            uninstallButton.isEnabled = false
+            scanButton.isEnabled = false
+            progressIndicator.isHidden = false
+            progressIndicator.startAnimation(nil)
+            statusLabel.stringValue = "卸载中..."
+            
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let self = self else { return }
+                
+                // 创建应用的清理项目
+                let appItem = CleanupItem(
+                    category: .appCache,
+                    path: app.path,
+                    name: app.name,
+                    size: app.size,
+                    modifiedDate: nil,
+                    isSelected: true
+                )
+                
+                var allItems = [appItem]
+                allItems.append(contentsOf: self.relatedFiles)
+                
+                let result = SystemScanner.cleanup(items: allItems) { current, total, message in
+                    DispatchQueue.main.async {
+                        self.statusLabel.stringValue = "卸载中... (\(current)/\(total))"
+                    }
+                }
+                
+                DispatchQueue.main.async {
+                    self.progressIndicator.stopAnimation(nil)
+                    self.progressIndicator.isHidden = true
+                    self.scanButton.isEnabled = true
+                    
+                    if result.failed == 0 {
+                        let successAlert = NSAlert()
+                        successAlert.messageText = "卸载完成"
+                        successAlert.informativeText = "成功卸载 \(app.name) 及其相关文件"
+                        successAlert.alertStyle = .informational
+                        successAlert.addButton(withTitle: "好的")
+                        successAlert.runModal()
+                        
+                        // 刷新列表
+                        self.startScan()
+                        self.selectedApp = nil
+                        self.relatedFiles = []
+                        self.selectionLabel.stringValue = ""
+                    } else {
+                        let errorAlert = NSAlert()
+                        errorAlert.messageText = "卸载完成（部分失败）"
+                        errorAlert.informativeText = "成功: \(result.success) 个\n失败: \(result.failed) 个\n\n失败原因：\n\(result.errors.prefix(5).joined(separator: "\n"))"
+                        errorAlert.alertStyle = .warning
+                        errorAlert.addButton(withTitle: "好的")
+                        errorAlert.runModal()
+                    }
+                }
+            }
+        }
+    }
+}
+
+extension UninstallerViewController: NSTableViewDataSource, NSTableViewDelegate {
+    func numberOfRows(in tableView: NSTableView) -> Int {
+        return apps.count
+    }
+    
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        guard row < apps.count else { return nil }
+        let app = apps[row]
+        
+        let cell = NSTableCellView()
+        let identifier = tableColumn?.identifier.rawValue ?? ""
+        
+        let textField = NSTextField(labelWithString: "")
+        textField.frame = NSRect(x: 5, y: 10, width: tableColumn?.width ?? 100 - 10, height: 20)
+        
+        switch identifier {
+        case "name":
+            textField.stringValue = app.name
+            textField.font = NSFont.systemFont(ofSize: 13, weight: .medium)
+        case "version":
+            textField.stringValue = app.version
+            textField.alignment = .center
+        case "size":
+            textField.stringValue = app.formattedSize
+            textField.alignment = .right
+        case "path":
+            textField.stringValue = app.path
+            textField.textColor = NSColor.secondaryLabelColor
+            textField.font = NSFont.systemFont(ofSize: 11)
+        default:
+            break
+        }
+        
+        cell.addSubview(textField)
+        return cell
+    }
+}
+
+// 隐私清理视图控制器
+class PrivacyViewController: NSViewController {
+    var tableView: NSTableView!
+    var scanButton: NSButton!
+    var cleanButton: NSButton!
+    var selectAllButton: NSButton!
+    var deselectAllButton: NSButton!
+    var progressIndicator: NSProgressIndicator!
+    var statusLabel: NSTextField!
+    var selectionLabel: NSTextField!
+    var items: [CleanupItem] = []
+    
+    override func loadView() {
+        self.view = NSView(frame: NSRect(x: 0, y: 0, width: 949, height: 700))
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+    }
+    
+    func setupUI() {
+        // 标题
+        let titleLabel = NSTextField(labelWithString: "隐私清理")
+        titleLabel.frame = NSRect(x: 30, y: 650, width: 300, height: 30)
+        titleLabel.font = NSFont.systemFont(ofSize: 24, weight: .bold)
+        view.addSubview(titleLabel)
+        
+        let descLabel = NSTextField(labelWithString: "清理浏览器历史、Cookie 和最近使用的文件")
+        descLabel.frame = NSRect(x: 30, y: 630, width: 500, height: 18)
+        descLabel.font = NSFont.systemFont(ofSize: 13)
+        descLabel.textColor = NSColor.secondaryLabelColor
+        view.addSubview(descLabel)
+        
+        // 选择统计标签
+        selectionLabel = NSTextField(labelWithString: "")
+        selectionLabel.frame = NSRect(x: 30, y: 605, width: 500, height: 18)
+        selectionLabel.font = NSFont.systemFont(ofSize: 12)
+        selectionLabel.textColor = NSColor.systemBlue
+        view.addSubview(selectionLabel)
+        
+        // 表格
+        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: 889, height: 510))
+        scrollView.hasVerticalScroller = true
+        scrollView.borderType = .bezelBorder
+        
+        tableView = NSTableView(frame: scrollView.bounds)
+        tableView.rowHeight = 32
+        tableView.usesAlternatingRowBackgroundColors = true
+        
+        // 勾选框列
+        let checkColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("check"))
+        checkColumn.title = "✓"
+        checkColumn.width = 40
+        tableView.addTableColumn(checkColumn)
+        
+        let nameColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("name"))
+        nameColumn.title = "名称"
+        nameColumn.width = 350
+        tableView.addTableColumn(nameColumn)
+        
+        let sizeColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("size"))
+        sizeColumn.title = "大小"
+        sizeColumn.width = 100
+        tableView.addTableColumn(sizeColumn)
+        
+        let pathColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("path"))
+        pathColumn.title = "路径"
+        pathColumn.width = 380
+        tableView.addTableColumn(pathColumn)
+        
+        tableView.delegate = self
+        tableView.dataSource = self
+        
+        scrollView.documentView = tableView
+        view.addSubview(scrollView)
+        
+        // 底部按钮
+        selectAllButton = NSButton(frame: NSRect(x: 30, y: 20, width: 80, height: 32))
+        selectAllButton.title = "全选"
+        selectAllButton.bezelStyle = .rounded
+        selectAllButton.target = self
+        selectAllButton.action = #selector(selectAllItems)
+        selectAllButton.isEnabled = false
+        view.addSubview(selectAllButton)
+        
+        deselectAllButton = NSButton(frame: NSRect(x: 120, y: 20, width: 80, height: 32))
+        deselectAllButton.title = "取消全选"
+        deselectAllButton.bezelStyle = .rounded
+        deselectAllButton.target = self
+        deselectAllButton.action = #selector(deselectAllItems)
+        deselectAllButton.isEnabled = false
+        view.addSubview(deselectAllButton)
+        
+        scanButton = NSButton(frame: NSRect(x: 350, y: 20, width: 120, height: 32))
+        scanButton.title = "开始扫描"
+        scanButton.bezelStyle = .rounded
+        scanButton.target = self
+        scanButton.action = #selector(startScan)
+        view.addSubview(scanButton)
+        
+        cleanButton = NSButton(frame: NSRect(x: 490, y: 20, width: 120, height: 32))
+        cleanButton.title = "清理选中项"
+        cleanButton.bezelStyle = .rounded
+        cleanButton.target = self
+        cleanButton.action = #selector(startClean)
+        cleanButton.isEnabled = false
+        view.addSubview(cleanButton)
+        
+        progressIndicator = NSProgressIndicator(frame: NSRect(x: 630, y: 25, width: 20, height: 20))
+        progressIndicator.style = .spinning
+        progressIndicator.isHidden = true
+        view.addSubview(progressIndicator)
+        
+        statusLabel = NSTextField(labelWithString: "")
+        statusLabel.frame = NSRect(x: 660, y: 27, width: 250, height: 18)
+        statusLabel.font = NSFont.systemFont(ofSize: 12)
+        view.addSubview(statusLabel)
+    }
+    
+    @objc func selectAllItems() {
+        for i in 0..<items.count {
+            items[i].isSelected = true
+        }
+        tableView.reloadData()
+        updateSelectionLabel()
+    }
+    
+    @objc func deselectAllItems() {
+        for i in 0..<items.count {
+            items[i].isSelected = false
+        }
+        tableView.reloadData()
+        updateSelectionLabel()
+    }
+    
+    func updateSelectionLabel() {
+        let selectedItems = items.filter { $0.isSelected }
+        let selectedSize = selectedItems.reduce(0) { $0 + $1.size }
+        let sizeStr = ByteCountFormatter.string(fromByteCount: selectedSize, countStyle: .file)
+        selectionLabel.stringValue = "已选择 \(selectedItems.count) 个项目，共 \(sizeStr)"
+        
+        cleanButton.isEnabled = !selectedItems.isEmpty
+    }
+    
+    @objc func startScan() {
+        scanButton.isEnabled = false
+        progressIndicator.isHidden = false
+        progressIndicator.startAnimation(nil)
+        statusLabel.stringValue = "正在扫描..."
+        items = []
+        tableView.reloadData()
+        
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let scannedItems = SystemScanner.scanBrowserData { progress, message in
+                DispatchQueue.main.async {
+                    self?.statusLabel.stringValue = message
+                }
+            }
+            
+            DispatchQueue.main.async {
+                self?.items = scannedItems
+                self?.tableView.reloadData()
+                self?.scanButton.isEnabled = true
+                self?.selectAllButton.isEnabled = !scannedItems.isEmpty
+                self?.deselectAllButton.isEnabled = !scannedItems.isEmpty
+                self?.progressIndicator.stopAnimation(nil)
+                self?.progressIndicator.isHidden = true
+                
+                let totalSize = scannedItems.reduce(0) { $0 + $1.size }
+                let sizeStr = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+                self?.statusLabel.stringValue = "找到 \(scannedItems.count) 个项目，共 \(sizeStr)"
+                self?.updateSelectionLabel()
+            }
+        }
+    }
+    
+    @objc func startClean() {
+        let selectedItems = items.filter { $0.isSelected }
+        
+        if selectedItems.isEmpty {
+            let alert = NSAlert()
+            alert.messageText = "没有选中项目"
+            alert.informativeText = "请先选择要清理的项目"
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "好的")
+            alert.runModal()
+            return
+        }
+        
+        let alert = NSAlert()
+        alert.messageText = "确认清理"
+        let totalSize = selectedItems.reduce(0) { $0 + $1.size }
+        let sizeStr = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+        alert.informativeText = "将清理 \(selectedItems.count) 个隐私文件，释放约 \(sizeStr) 空间\n\n⚠️ 警告：清理后浏览器历史和 Cookie 将被删除\n文件将被移到废纸篓，可以恢复。"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "清理")
+        alert.addButton(withTitle: "取消")
+        
+        if alert.runModal() == .alertFirstButtonReturn {
+            cleanButton.isEnabled = false
+            scanButton.isEnabled = false
+            selectAllButton.isEnabled = false
+            deselectAllButton.isEnabled = false
+            progressIndicator.isHidden = false
+            progressIndicator.startAnimation(nil)
+            statusLabel.stringValue = "清理中..."
+            
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let self = self else { return }
+                
+                let result = SystemScanner.cleanup(items: selectedItems) { current, total, message in
+                    DispatchQueue.main.async {
+                        self.statusLabel.stringValue = "清理中... (\(current)/\(total))"
+                    }
+                }
+                
+                DispatchQueue.main.async {
+                    self.progressIndicator.stopAnimation(nil)
+                    self.progressIndicator.isHidden = true
+                    self.scanButton.isEnabled = true
+                    
+                    if result.failed == 0 {
+                        let successAlert = NSAlert()
+                        successAlert.messageText = "清理完成"
+                        successAlert.informativeText = "成功清理 \(result.success) 个隐私文件"
+                        successAlert.alertStyle = .informational
+                        successAlert.addButton(withTitle: "好的")
+                        successAlert.runModal()
+                        
+                        // 移除已清理的项目
+                        self.items.removeAll { $0.isSelected }
+                        self.tableView.reloadData()
+                        self.selectAllButton.isEnabled = !self.items.isEmpty
+                        self.deselectAllButton.isEnabled = !self.items.isEmpty
+                        self.updateSelectionLabel()
+                        
+                        if self.items.isEmpty {
+                            self.statusLabel.stringValue = "所有项目已清理"
+                        } else {
+                            let remainingSize = self.items.reduce(0) { $0 + $1.size }
+                            let sizeStr = ByteCountFormatter.string(fromByteCount: remainingSize, countStyle: .file)
+                            self.statusLabel.stringValue = "剩余 \(self.items.count) 个项目，共 \(sizeStr)"
+                        }
+                    } else {
+                        let errorAlert = NSAlert()
+                        errorAlert.messageText = "清理完成（部分失败）"
+                        errorAlert.informativeText = "成功: \(result.success) 个\n失败: \(result.failed) 个\n\n失败原因：\n\(result.errors.prefix(5).joined(separator: "\n"))"
+                        errorAlert.alertStyle = .warning
+                        errorAlert.addButton(withTitle: "好的")
+                        errorAlert.runModal()
+                        
+                        self.startScan()
+                    }
+                }
+            }
+        }
+    }
+}
+
+extension PrivacyViewController: NSTableViewDataSource, NSTableViewDelegate {
+    func numberOfRows(in tableView: NSTableView) -> Int {
+        return items.count
+    }
+    
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        guard row < items.count else { return nil }
+        let item = items[row]
+        
+        let identifier = tableColumn?.identifier.rawValue ?? ""
+        
+        if identifier == "check" {
             let cell = NSTableCellView()
             let checkbox = NSButton(checkboxWithTitle: "", target: self, action: #selector(checkboxToggled(_:)))
             checkbox.frame = NSRect(x: 10, y: 6, width: 20, height: 20)
