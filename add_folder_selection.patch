@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# 这个补丁为所有扫描功能添加"选择文件夹"按钮
+
+cat > /tmp/folder_selection_mixin.swift << 'EOF'
+// 添加到每个视图控制器的功能：
+
+// 1. 添加属性
+var selectedDirectory: URL?
+var selectFolderButton: NSButton!
+var pathLabel: NSTextField!
+
+// 2. 在 setupUI() 中添加路径标签（在 selectionLabel 之前）
+pathLabel = NSTextField(labelWithString: "扫描范围: 整个系统")
+pathLabel.frame = NSRect(x: 30, y: view.bounds.height - 110, width: 600, height: 16)
+pathLabel.font = NSFont.systemFont(ofSize: 11)
+pathLabel.textColor = NSColor.tertiaryLabelColor
+pathLabel.autoresizingMask = [.minYMargin]
+view.addSubview(pathLabel)
+
+// 3. 在底部按钮区域添加"选择文件夹"按钮
+selectFolderButton = NSButton(frame: NSRect(x: 220, y: 20, width: 120, height: 32))
+selectFolderButton.title = "选择文件夹"
+selectFolderButton.bezelStyle = .rounded
+selectFolderButton.target = self
+selectFolderButton.action = #selector(selectFolder)
+selectFolderButton.autoresizingMask = [.maxXMargin, .maxYMargin]
+view.addSubview(selectFolderButton)
+
+// 4. 添加选择文件夹方法
+@objc func selectFolder() {
+    let panel = NSOpenPanel()
+    panel.canChooseFiles = false
+    panel.canChooseDirectories = true
+    panel.allowsMultipleSelection = false
+    panel.message = "选择要扫描的文件夹"
+    
+    panel.begin { [weak self] response in
+        if response == .OK, let url = panel.url {
+            self?.selectedDirectory = url
+            self?.pathLabel.stringValue = "扫描范围: \(url.path)"
+        } else if response == .cancel {
+            self?.selectedDirectory = nil
+            self?.pathLabel.stringValue = "扫描范围: 整个系统"
+        }
+    }
+}
+
+// 5. 修改扫描调用，传入 selectedDirectory
+// 大文件: SystemScanner.scanLargeFiles(in: selectedDirectory) { _, message in
+// 旧文件: SystemScanner.scanOldFiles(in: selectedDirectory) { _, message in
+// 重复文件: SystemScanner.scanDuplicateFiles(in: selectedDirectory ? [selectedDirectory!.path] : nil) { progress, message in
+EOF
+
+echo "补丁说明已生成到 /tmp/folder_selection_mixin.swift"
+echo "需要手动修改以下文件："
+echo "1. CleanupViewController - 大文件、旧文件"
+echo "2. DuplicateFilesViewController - 重复文件"
+echo "3. SmartScanViewController - 智能扫描（可选）"

@@ -1,4 +1,4 @@
-# CleanMyMac 统一版 - 系统清理工具
+# SpaceCleaner - 系统清理工具
 
 一个完整的 macOS 系统清理工具，整合所有功能到一个应用中，使用纯 Swift + AppKit 构建。
 
@@ -26,7 +26,7 @@
 ./run.sh
 ```
 
-或者直接双击 `build/CleanMyMac.app`
+或者直接双击 `build/SpaceCleaner.app`
 
 ## 🎯 功能模块
 
@@ -93,7 +93,8 @@
 │   ├── SpaceLensModels.swift  # Space Lens 模型
 │   ├── SpaceLensScanner.swift # Space Lens 扫描器
 │   ├── Treemap.swift          # 树状图算法
-│   └── TreemapView.swift      # 树状图视图
+│   ├── TreemapView.swift      # 树状图视图
+│   └── FolderSelectionMixin.swift # 文件夹选择辅助
 ├── build-unified.sh            # 构建统一版
 ├── run.sh                      # 快速启动
 └── README.md                   # 本文件
@@ -112,7 +113,7 @@
 ./run.sh
 ```
 
-或者双击 `build/CleanMyMac.app`
+或者直接双击 `build/SpaceCleaner.app`
 
 ### 使用流程
 
@@ -136,8 +137,8 @@
 4. **系统垃圾/大文件/旧文件**
    - 点击"开始扫描"
    - 查看扫描结果（名称、大小、路径）
-   - 选择要清理的项目（当前会清理所有扫描到的项目）
-   - 点击"清理"按钮
+   - 勾选要清理的项目
+   - 点击"清理选中项"按钮
    - 确认清理对话框
    - 等待清理完成
    - 查看清理结果（成功/失败统计）
@@ -177,7 +178,7 @@
 首次运行时可能会遇到安全提示，解决方法：
 
 ```bash
-xattr -cr "build/空间管理.app"
+xattr -cr "build/SpaceCleaner.app"
 ```
 
 或者：
@@ -263,16 +264,19 @@ MIT License
 
 ## 🎯 功能对比
 
-| 功能 | CleanMyMac 版本 | 简化版 | CleanMyMac X |
-|------|----------------|--------|--------------|
-| 系统垃圾清理 | ✅ | ❌ | ✅ |
-| 大文件查找 | ✅ | ✅ | ✅ |
-| 旧文件查找 | ✅ | ❌ | ✅ |
-| 开发者垃圾 | ✅ | ❌ | ✅ |
-| 分类浏览 | ✅ | ❌ | ✅ |
-| 批量清理 | ✅ | ❌ | ✅ |
-| 应用大小 | 200KB | 136KB | 50MB+ |
-| 价格 | 免费 | 免费 | $89.95 |
+| 功能 | SpaceCleaner | CleanMyMac X |
+|------|-------------|--------------|
+| 系统垃圾清理 | ✅ | ✅ |
+| 大文件查找 | ✅ | ✅ |
+| 旧文件查找 | ✅ | ✅ |
+| 重复文件 | ✅ | ✅ |
+| 应用卸载 | ✅ | ✅ |
+| 隐私清理 | ✅ | ✅ |
+| Space Lens | ✅ | ✅ |
+| 智能扫描 | ✅ | ✅ |
+| 选择性清理 | ✅ | ✅ |
+| 应用大小 | ~300KB | 50MB+ |
+| 价格 | 免费 | $89.95 |
 
 ---
 

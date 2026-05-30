@@ -115,7 +115,7 @@ class UnifiedViewController: NSViewController {
         }
         topBar.addSubview(appIconView)
         
-        let titleLabel = NSTextField(labelWithString: "CleanMyMac")
+        let titleLabel = NSTextField(labelWithString: "SpaceCleaner")
         titleLabel.frame = NSRect(x: 58, y: 15, width: 200, height: 24)
         titleLabel.font = NSFont.systemFont(ofSize: 18, weight: .bold)
         titleLabel.textColor = NSColor.labelColor
@@ -333,7 +333,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "CleanMyMac - 系统清理工具"
+        window.title = "SpaceCleaner - 系统清理工具"
         window.center()
         window.minSize = NSSize(width: 1000, height: 650)
         window.maxSize = NSSize(width: 1600, height: 1000)

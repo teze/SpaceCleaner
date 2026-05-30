@@ -2,11 +2,11 @@
 
 set -e
 
-echo "🚀 开始构建 CleanMyMac 统一版..."
+echo "🚀 开始构建 SpaceCleaner..."
 
 # 配置
-APP_NAME="CleanMyMac"
-BUNDLE_ID="com.cleanmymac.unified"
+APP_NAME="SpaceCleaner"
+BUNDLE_ID="com.spacecleaner.app"
 BUILD_DIR="build"
 APP_DIR="$BUILD_DIR/$APP_NAME.app"
 CONTENTS_DIR="$APP_DIR/Contents"
@@ -54,13 +54,13 @@ cat > "$CONTENTS_DIR/Info.plist" << 'EOF'
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>CleanMyMac</string>
+    <string>SpaceCleaner</string>
     <key>CFBundleIdentifier</key>
-    <string>com.cleanmymac.unified</string>
+    <string>com.spacecleaner.app</string>
     <key>CFBundleName</key>
-    <string>CleanMyMac</string>
+    <string>SpaceCleaner</string>
     <key>CFBundleDisplayName</key>
-    <string>CleanMyMac</string>
+    <string>SpaceCleaner</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -97,14 +97,15 @@ echo ""
 echo "✨ 构建完成！"
 echo "📦 应用位置: $APP_DIR"
 echo ""
-echo "🎯 统一版功能："
+echo "🎯 SpaceCleaner 功能："
 echo "  ✅ 智能扫描 - 一键扫描所有类别"
 echo "  ✅ Space Lens - 树状图可视化"
 echo "  ✅ 系统垃圾 - 清理系统缓存"
 echo "  ✅ 大文件 - 查找大文件"
 echo "  ✅ 旧文件 - 查找旧文件"
-echo "  ⏳ 应用卸载 - 即将推出"
-echo "  ⏳ 隐私清理 - 即将推出"
+echo "  ✅ 重复文件 - 查找重复文件"
+echo "  ✅ 应用卸载 - 完全卸载应用"
+echo "  ✅ 隐私清理 - 清理浏览器数据"
 echo ""
 echo "运行方式："
 echo "  双击打开: open \"$APP_DIR\""
