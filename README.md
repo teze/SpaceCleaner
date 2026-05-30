@@ -249,6 +249,8 @@ xattr -cr "build/SpaceCleaner.app"
 
 欢迎提交 Issue 和 Pull Request！
 
+GitHub 仓库：https://github.com/teze/SpaceCleaner
+
 ## 📄 许可证
 
 MIT License
