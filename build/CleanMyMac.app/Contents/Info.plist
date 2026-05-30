@@ -5,7 +5,7 @@
     <key>CFBundleExecutable</key>
     <string>CleanMyMac</string>
     <key>CFBundleIdentifier</key>
-    <string>com.cleanmymac.app</string>
+    <string>com.cleanmymac.unified</string>
     <key>CFBundleName</key>
     <string>CleanMyMac</string>
     <key>CFBundleDisplayName</key>

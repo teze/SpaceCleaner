@@ -14,7 +14,8 @@ class SmartScanViewController: NSViewController {
     var items: [CleanupItem] = []
     
     override func loadView() {
-        self.view = NSView(frame: NSRect(x: 0, y: 0, width: 949, height: 700))
+        self.view = NSView()
+        self.view.autoresizingMask = [.width, .height]
     }
     
     override func viewDidLoad() {
@@ -25,27 +26,31 @@ class SmartScanViewController: NSViewController {
     func setupUI() {
         // 标题
         let titleLabel = NSTextField(labelWithString: "智能扫描")
-        titleLabel.frame = NSRect(x: 30, y: 650, width: 300, height: 30)
+        titleLabel.frame = NSRect(x: 30, y: view.bounds.height - 50, width: 300, height: 30)
         titleLabel.font = NSFont.systemFont(ofSize: 24, weight: .bold)
+        titleLabel.autoresizingMask = [.minYMargin]
         view.addSubview(titleLabel)
         
         let descLabel = NSTextField(labelWithString: "一键扫描系统垃圾、大文件和旧文件")
-        descLabel.frame = NSRect(x: 30, y: 630, width: 500, height: 18)
+        descLabel.frame = NSRect(x: 30, y: view.bounds.height - 70, width: 500, height: 18)
         descLabel.font = NSFont.systemFont(ofSize: 13)
         descLabel.textColor = NSColor.secondaryLabelColor
+        descLabel.autoresizingMask = [.minYMargin]
         view.addSubview(descLabel)
         
         // 选择统计标签
         selectionLabel = NSTextField(labelWithString: "")
-        selectionLabel.frame = NSRect(x: 30, y: 605, width: 500, height: 18)
+        selectionLabel.frame = NSRect(x: 30, y: view.bounds.height - 95, width: 500, height: 18)
         selectionLabel.font = NSFont.systemFont(ofSize: 12)
         selectionLabel.textColor = NSColor.systemBlue
+        selectionLabel.autoresizingMask = [.minYMargin]
         view.addSubview(selectionLabel)
         
         // 表格
-        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: 889, height: 510))
+        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: view.bounds.width - 60, height: view.bounds.height - 190))
         scrollView.hasVerticalScroller = true
         scrollView.borderType = .bezelBorder
+        scrollView.autoresizingMask = [.width, .height]
         
         tableView = NSTableView(frame: scrollView.bounds)
         tableView.rowHeight = 32
@@ -91,6 +96,7 @@ class SmartScanViewController: NSViewController {
         selectAllButton.target = self
         selectAllButton.action = #selector(selectAllItems)
         selectAllButton.isEnabled = false
+        selectAllButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(selectAllButton)
         
         deselectAllButton = NSButton(frame: NSRect(x: 120, y: 20, width: 80, height: 32))
@@ -99,6 +105,7 @@ class SmartScanViewController: NSViewController {
         deselectAllButton.target = self
         deselectAllButton.action = #selector(deselectAllItems)
         deselectAllButton.isEnabled = false
+        deselectAllButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(deselectAllButton)
         
         scanButton = NSButton(frame: NSRect(x: 350, y: 20, width: 120, height: 32))
@@ -106,6 +113,7 @@ class SmartScanViewController: NSViewController {
         scanButton.bezelStyle = .rounded
         scanButton.target = self
         scanButton.action = #selector(startScan)
+        scanButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(scanButton)
         
         cleanButton = NSButton(frame: NSRect(x: 490, y: 20, width: 120, height: 32))
@@ -114,16 +122,19 @@ class SmartScanViewController: NSViewController {
         cleanButton.target = self
         cleanButton.action = #selector(startClean)
         cleanButton.isEnabled = false
+        cleanButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(cleanButton)
         
         progressIndicator = NSProgressIndicator(frame: NSRect(x: 630, y: 25, width: 20, height: 20))
         progressIndicator.style = .spinning
         progressIndicator.isHidden = true
+        progressIndicator.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(progressIndicator)
         
         statusLabel = NSTextField(labelWithString: "")
         statusLabel.frame = NSRect(x: 660, y: 27, width: 250, height: 18)
         statusLabel.font = NSFont.systemFont(ofSize: 12)
+        statusLabel.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(statusLabel)
     }
     
@@ -344,7 +355,8 @@ class SpaceLensViewController: NSViewController {
     var navigationStack: [FileNode] = []
     
     override func loadView() {
-        self.view = NSView(frame: NSRect(x: 0, y: 0, width: 949, height: 700))
+        self.view = NSView()
+        self.view.autoresizingMask = [.width, .height]
     }
     
     override func viewDidLoad() {
@@ -355,25 +367,29 @@ class SpaceLensViewController: NSViewController {
     func setupUI() {
         // 顶部信息
         pathLabel = NSTextField(labelWithString: "选择文件夹开始扫描")
-        pathLabel.frame = NSRect(x: 20, y: 660, width: 600, height: 20)
+        pathLabel.frame = NSRect(x: 20, y: view.bounds.height - 40, width: 600, height: 20)
+        pathLabel.autoresizingMask = [.minYMargin]
         pathLabel.font = NSFont.systemFont(ofSize: 13, weight: .medium)
         view.addSubview(pathLabel)
         
         sizeLabel = NSTextField(labelWithString: "")
-        sizeLabel.frame = NSRect(x: 20, y: 640, width: 300, height: 18)
+        sizeLabel.frame = NSRect(x: 20, y: view.bounds.height - 60, width: 300, height: 18)
+        sizeLabel.autoresizingMask = [.minYMargin]
         sizeLabel.font = NSFont.systemFont(ofSize: 12)
         sizeLabel.textColor = NSColor.secondaryLabelColor
         view.addSubview(sizeLabel)
         
         // 面包屑
         breadcrumbLabel = NSTextField(labelWithString: "")
-        breadcrumbLabel.frame = NSRect(x: 20, y: 610, width: 909, height: 20)
+        breadcrumbLabel.frame = NSRect(x: 20, y: view.bounds.height - 90, width: view.bounds.width - 40, height: 20)
+        breadcrumbLabel.autoresizingMask = [.minYMargin, .width]
         breadcrumbLabel.font = NSFont.systemFont(ofSize: 11)
         breadcrumbLabel.textColor = NSColor.tertiaryLabelColor
         view.addSubview(breadcrumbLabel)
         
         // 树状图
-        treemapView = TreemapView(frame: NSRect(x: 20, y: 80, width: 909, height: 520))
+        treemapView = TreemapView(frame: NSRect(x: 20, y: 80, width: view.bounds.width - 40, height: view.bounds.height - 180))
+        treemapView.autoresizingMask = [.width, .height]
         treemapView.wantsLayer = true
         treemapView.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
         treemapView.layer?.cornerRadius = 8
@@ -389,6 +405,7 @@ class SpaceLensViewController: NSViewController {
         backButton.target = self
         backButton.action = #selector(goBack)
         backButton.isEnabled = false
+        backButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(backButton)
         
         scanButton = NSButton(frame: NSRect(x: 420, y: 20, width: 120, height: 32))
@@ -396,11 +413,13 @@ class SpaceLensViewController: NSViewController {
         scanButton.bezelStyle = .rounded
         scanButton.target = self
         scanButton.action = #selector(selectFolder)
+        scanButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(scanButton)
         
         progressIndicator = NSProgressIndicator(frame: NSRect(x: 560, y: 25, width: 20, height: 20))
         progressIndicator.style = .spinning
         progressIndicator.isHidden = true
+        progressIndicator.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(progressIndicator)
     }
     
@@ -508,7 +527,8 @@ class CleanupViewController: NSViewController {
     }
     
     override func loadView() {
-        self.view = NSView(frame: NSRect(x: 0, y: 0, width: 949, height: 700))
+        self.view = NSView()
+        self.view.autoresizingMask = [.width, .height]
     }
     
     override func viewDidLoad() {
@@ -519,25 +539,29 @@ class CleanupViewController: NSViewController {
     func setupUI() {
         // 标题
         let titleLabel = NSTextField(labelWithString: category.rawValue)
-        titleLabel.frame = NSRect(x: 30, y: 650, width: 300, height: 30)
+        titleLabel.frame = NSRect(x: 30, y: view.bounds.height - 50, width: 300, height: 30)
+        titleLabel.autoresizingMask = [.minYMargin]
         titleLabel.font = NSFont.systemFont(ofSize: 24, weight: .bold)
         view.addSubview(titleLabel)
         
         let descLabel = NSTextField(labelWithString: category.description)
-        descLabel.frame = NSRect(x: 30, y: 630, width: 500, height: 18)
+        descLabel.frame = NSRect(x: 30, y: view.bounds.height - 70, width: 500, height: 18)
+        descLabel.autoresizingMask = [.minYMargin]
         descLabel.font = NSFont.systemFont(ofSize: 13)
         descLabel.textColor = NSColor.secondaryLabelColor
         view.addSubview(descLabel)
         
         // 选择统计标签
         selectionLabel = NSTextField(labelWithString: "")
-        selectionLabel.frame = NSRect(x: 30, y: 605, width: 500, height: 18)
+        selectionLabel.frame = NSRect(x: 30, y: view.bounds.height - 95, width: 500, height: 18)
+        selectionLabel.autoresizingMask = [.minYMargin]
         selectionLabel.font = NSFont.systemFont(ofSize: 12)
         selectionLabel.textColor = NSColor.systemBlue
         view.addSubview(selectionLabel)
         
         // 表格
-        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: 889, height: 510))
+        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: view.bounds.width - 60, height: view.bounds.height - 190))
+        scrollView.autoresizingMask = [.width, .height]
         scrollView.hasVerticalScroller = true
         scrollView.borderType = .bezelBorder
         
@@ -579,6 +603,7 @@ class CleanupViewController: NSViewController {
         selectAllButton.target = self
         selectAllButton.action = #selector(selectAllItems)
         selectAllButton.isEnabled = false
+        selectAllButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(selectAllButton)
         
         deselectAllButton = NSButton(frame: NSRect(x: 120, y: 20, width: 80, height: 32))
@@ -587,6 +612,7 @@ class CleanupViewController: NSViewController {
         deselectAllButton.target = self
         deselectAllButton.action = #selector(deselectAllItems)
         deselectAllButton.isEnabled = false
+        deselectAllButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(deselectAllButton)
         
         scanButton = NSButton(frame: NSRect(x: 350, y: 20, width: 120, height: 32))
@@ -594,6 +620,7 @@ class CleanupViewController: NSViewController {
         scanButton.bezelStyle = .rounded
         scanButton.target = self
         scanButton.action = #selector(startScan)
+        scanButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(scanButton)
         
         cleanButton = NSButton(frame: NSRect(x: 490, y: 20, width: 120, height: 32))
@@ -602,16 +629,19 @@ class CleanupViewController: NSViewController {
         cleanButton.target = self
         cleanButton.action = #selector(startClean)
         cleanButton.isEnabled = false
+        cleanButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(cleanButton)
         
         progressIndicator = NSProgressIndicator(frame: NSRect(x: 630, y: 25, width: 20, height: 20))
         progressIndicator.style = .spinning
         progressIndicator.isHidden = true
+        progressIndicator.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(progressIndicator)
         
         statusLabel = NSTextField(labelWithString: "")
         statusLabel.frame = NSRect(x: 660, y: 27, width: 250, height: 18)
         statusLabel.font = NSFont.systemFont(ofSize: 12)
+        statusLabel.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(statusLabel)
     }
     
@@ -845,7 +875,8 @@ class DuplicateFilesViewController: NSViewController {
     var flattenedItems: [CleanupItem] = []
     
     override func loadView() {
-        self.view = NSView(frame: NSRect(x: 0, y: 0, width: 949, height: 700))
+        self.view = NSView()
+        self.view.autoresizingMask = [.width, .height]
     }
     
     override func viewDidLoad() {
@@ -856,25 +887,29 @@ class DuplicateFilesViewController: NSViewController {
     func setupUI() {
         // 标题
         let titleLabel = NSTextField(labelWithString: "重复文件")
-        titleLabel.frame = NSRect(x: 30, y: 650, width: 300, height: 30)
+        titleLabel.frame = NSRect(x: 30, y: view.bounds.height - 50, width: 300, height: 30)
+        titleLabel.autoresizingMask = [.minYMargin]
         titleLabel.font = NSFont.systemFont(ofSize: 24, weight: .bold)
         view.addSubview(titleLabel)
         
         let descLabel = NSTextField(labelWithString: "查找并删除重复的文件（基于 MD5 哈希）")
-        descLabel.frame = NSRect(x: 30, y: 630, width: 500, height: 18)
+        descLabel.frame = NSRect(x: 30, y: view.bounds.height - 70, width: 500, height: 18)
+        descLabel.autoresizingMask = [.minYMargin]
         descLabel.font = NSFont.systemFont(ofSize: 13)
         descLabel.textColor = NSColor.secondaryLabelColor
         view.addSubview(descLabel)
         
         // 选择统计标签
         selectionLabel = NSTextField(labelWithString: "")
-        selectionLabel.frame = NSRect(x: 30, y: 605, width: 500, height: 18)
+        selectionLabel.frame = NSRect(x: 30, y: view.bounds.height - 95, width: 500, height: 18)
+        selectionLabel.autoresizingMask = [.minYMargin]
         selectionLabel.font = NSFont.systemFont(ofSize: 12)
         selectionLabel.textColor = NSColor.systemBlue
         view.addSubview(selectionLabel)
         
         // 表格
-        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: 889, height: 510))
+        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: view.bounds.width - 60, height: view.bounds.height - 190))
+        scrollView.autoresizingMask = [.width, .height]
         scrollView.hasVerticalScroller = true
         scrollView.borderType = .bezelBorder
         
@@ -922,6 +957,7 @@ class DuplicateFilesViewController: NSViewController {
         selectAllButton.target = self
         selectAllButton.action = #selector(selectDuplicates)
         selectAllButton.isEnabled = false
+        selectAllButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(selectAllButton)
         
         deselectAllButton = NSButton(frame: NSRect(x: 140, y: 20, width: 80, height: 32))
@@ -930,6 +966,7 @@ class DuplicateFilesViewController: NSViewController {
         deselectAllButton.target = self
         deselectAllButton.action = #selector(deselectAllItems)
         deselectAllButton.isEnabled = false
+        deselectAllButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(deselectAllButton)
         
         scanButton = NSButton(frame: NSRect(x: 350, y: 20, width: 120, height: 32))
@@ -937,6 +974,7 @@ class DuplicateFilesViewController: NSViewController {
         scanButton.bezelStyle = .rounded
         scanButton.target = self
         scanButton.action = #selector(startScan)
+        scanButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(scanButton)
         
         cleanButton = NSButton(frame: NSRect(x: 490, y: 20, width: 120, height: 32))
@@ -945,16 +983,19 @@ class DuplicateFilesViewController: NSViewController {
         cleanButton.target = self
         cleanButton.action = #selector(startClean)
         cleanButton.isEnabled = false
+        cleanButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(cleanButton)
         
         progressIndicator = NSProgressIndicator(frame: NSRect(x: 630, y: 25, width: 20, height: 20))
         progressIndicator.style = .spinning
         progressIndicator.isHidden = true
+        progressIndicator.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(progressIndicator)
         
         statusLabel = NSTextField(labelWithString: "")
         statusLabel.frame = NSRect(x: 660, y: 27, width: 250, height: 18)
         statusLabel.font = NSFont.systemFont(ofSize: 12)
+        statusLabel.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(statusLabel)
     }
     
@@ -1212,7 +1253,8 @@ class UninstallerViewController: NSViewController {
     var relatedFiles: [CleanupItem] = []
     
     override func loadView() {
-        self.view = NSView(frame: NSRect(x: 0, y: 0, width: 949, height: 700))
+        self.view = NSView()
+        self.view.autoresizingMask = [.width, .height]
     }
     
     override func viewDidLoad() {
@@ -1224,25 +1266,29 @@ class UninstallerViewController: NSViewController {
     func setupUI() {
         // 标题
         let titleLabel = NSTextField(labelWithString: "应用卸载")
-        titleLabel.frame = NSRect(x: 30, y: 650, width: 300, height: 30)
+        titleLabel.frame = NSRect(x: 30, y: view.bounds.height - 50, width: 300, height: 30)
+        titleLabel.autoresizingMask = [.minYMargin]
         titleLabel.font = NSFont.systemFont(ofSize: 24, weight: .bold)
         view.addSubview(titleLabel)
         
         let descLabel = NSTextField(labelWithString: "完全卸载应用及其相关文件")
-        descLabel.frame = NSRect(x: 30, y: 630, width: 500, height: 18)
+        descLabel.frame = NSRect(x: 30, y: view.bounds.height - 70, width: 500, height: 18)
+        descLabel.autoresizingMask = [.minYMargin]
         descLabel.font = NSFont.systemFont(ofSize: 13)
         descLabel.textColor = NSColor.secondaryLabelColor
         view.addSubview(descLabel)
         
         // 选择统计标签
         selectionLabel = NSTextField(labelWithString: "")
-        selectionLabel.frame = NSRect(x: 30, y: 605, width: 500, height: 18)
+        selectionLabel.frame = NSRect(x: 30, y: view.bounds.height - 95, width: 500, height: 18)
+        selectionLabel.autoresizingMask = [.minYMargin]
         selectionLabel.font = NSFont.systemFont(ofSize: 12)
         selectionLabel.textColor = NSColor.systemBlue
         view.addSubview(selectionLabel)
         
         // 表格
-        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: 889, height: 510))
+        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: view.bounds.width - 60, height: view.bounds.height - 190))
+        scrollView.autoresizingMask = [.width, .height]
         scrollView.hasVerticalScroller = true
         scrollView.borderType = .bezelBorder
         
@@ -1284,6 +1330,7 @@ class UninstallerViewController: NSViewController {
         scanButton.bezelStyle = .rounded
         scanButton.target = self
         scanButton.action = #selector(startScan)
+        scanButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(scanButton)
         
         uninstallButton = NSButton(frame: NSRect(x: 490, y: 20, width: 120, height: 32))
@@ -1292,16 +1339,19 @@ class UninstallerViewController: NSViewController {
         uninstallButton.target = self
         uninstallButton.action = #selector(uninstallApp)
         uninstallButton.isEnabled = false
+        uninstallButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(uninstallButton)
         
         progressIndicator = NSProgressIndicator(frame: NSRect(x: 630, y: 25, width: 20, height: 20))
         progressIndicator.style = .spinning
         progressIndicator.isHidden = true
+        progressIndicator.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(progressIndicator)
         
         statusLabel = NSTextField(labelWithString: "")
         statusLabel.frame = NSRect(x: 660, y: 27, width: 250, height: 18)
         statusLabel.font = NSFont.systemFont(ofSize: 12)
+        statusLabel.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(statusLabel)
     }
     
@@ -1488,7 +1538,8 @@ class PrivacyViewController: NSViewController {
     var items: [CleanupItem] = []
     
     override func loadView() {
-        self.view = NSView(frame: NSRect(x: 0, y: 0, width: 949, height: 700))
+        self.view = NSView()
+        self.view.autoresizingMask = [.width, .height]
     }
     
     override func viewDidLoad() {
@@ -1499,25 +1550,29 @@ class PrivacyViewController: NSViewController {
     func setupUI() {
         // 标题
         let titleLabel = NSTextField(labelWithString: "隐私清理")
-        titleLabel.frame = NSRect(x: 30, y: 650, width: 300, height: 30)
+        titleLabel.frame = NSRect(x: 30, y: view.bounds.height - 50, width: 300, height: 30)
+        titleLabel.autoresizingMask = [.minYMargin]
         titleLabel.font = NSFont.systemFont(ofSize: 24, weight: .bold)
         view.addSubview(titleLabel)
         
         let descLabel = NSTextField(labelWithString: "清理浏览器历史、Cookie 和最近使用的文件")
-        descLabel.frame = NSRect(x: 30, y: 630, width: 500, height: 18)
+        descLabel.frame = NSRect(x: 30, y: view.bounds.height - 70, width: 500, height: 18)
+        descLabel.autoresizingMask = [.minYMargin]
         descLabel.font = NSFont.systemFont(ofSize: 13)
         descLabel.textColor = NSColor.secondaryLabelColor
         view.addSubview(descLabel)
         
         // 选择统计标签
         selectionLabel = NSTextField(labelWithString: "")
-        selectionLabel.frame = NSRect(x: 30, y: 605, width: 500, height: 18)
+        selectionLabel.frame = NSRect(x: 30, y: view.bounds.height - 95, width: 500, height: 18)
+        selectionLabel.autoresizingMask = [.minYMargin]
         selectionLabel.font = NSFont.systemFont(ofSize: 12)
         selectionLabel.textColor = NSColor.systemBlue
         view.addSubview(selectionLabel)
         
         // 表格
-        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: 889, height: 510))
+        let scrollView = NSScrollView(frame: NSRect(x: 30, y: 80, width: view.bounds.width - 60, height: view.bounds.height - 190))
+        scrollView.autoresizingMask = [.width, .height]
         scrollView.hasVerticalScroller = true
         scrollView.borderType = .bezelBorder
         
@@ -1559,6 +1614,7 @@ class PrivacyViewController: NSViewController {
         selectAllButton.target = self
         selectAllButton.action = #selector(selectAllItems)
         selectAllButton.isEnabled = false
+        selectAllButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(selectAllButton)
         
         deselectAllButton = NSButton(frame: NSRect(x: 120, y: 20, width: 80, height: 32))
@@ -1567,6 +1623,7 @@ class PrivacyViewController: NSViewController {
         deselectAllButton.target = self
         deselectAllButton.action = #selector(deselectAllItems)
         deselectAllButton.isEnabled = false
+        deselectAllButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(deselectAllButton)
         
         scanButton = NSButton(frame: NSRect(x: 350, y: 20, width: 120, height: 32))
@@ -1574,6 +1631,7 @@ class PrivacyViewController: NSViewController {
         scanButton.bezelStyle = .rounded
         scanButton.target = self
         scanButton.action = #selector(startScan)
+        scanButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(scanButton)
         
         cleanButton = NSButton(frame: NSRect(x: 490, y: 20, width: 120, height: 32))
@@ -1582,16 +1640,19 @@ class PrivacyViewController: NSViewController {
         cleanButton.target = self
         cleanButton.action = #selector(startClean)
         cleanButton.isEnabled = false
+        cleanButton.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(cleanButton)
         
         progressIndicator = NSProgressIndicator(frame: NSRect(x: 630, y: 25, width: 20, height: 20))
         progressIndicator.style = .spinning
         progressIndicator.isHidden = true
+        progressIndicator.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(progressIndicator)
         
         statusLabel = NSTextField(labelWithString: "")
         statusLabel.frame = NSRect(x: 660, y: 27, width: 250, height: 18)
         statusLabel.font = NSFont.systemFont(ofSize: 12)
+        statusLabel.autoresizingMask = [.maxXMargin, .maxYMargin]
         view.addSubview(statusLabel)
     }
     

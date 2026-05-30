@@ -1,6 +1,23 @@
 import Cocoa
 import Foundation
 
+// 按钮样式辅助类
+extension NSButton {
+    static func createStyledButton(title: String, isPrimary: Bool = false) -> NSButton {
+        let button = NSButton(frame: .zero)
+        button.title = title
+        button.bezelStyle = .rounded
+        button.font = NSFont.systemFont(ofSize: 13, weight: .medium)
+        
+        if isPrimary {
+            button.contentTintColor = NSColor.white
+            button.bezelColor = NSColor.controlAccentColor
+        }
+        
+        return button
+    }
+}
+
 // 主视图控制器 - 整合所有功能
 class UnifiedViewController: NSViewController {
     // UI 组件
@@ -31,7 +48,7 @@ class UnifiedViewController: NSViewController {
             case .largeFiles: return "doc.badge.plus"
             case .oldFiles: return "clock"
             case .duplicates: return "doc.on.doc"
-            case .uninstaller: return "app.badge.minus"
+            case .uninstaller: return "xmark.app"
             case .privacy: return "hand.raised"
             }
         }
@@ -55,6 +72,7 @@ class UnifiedViewController: NSViewController {
     
     override func loadView() {
         self.view = NSView(frame: NSRect(x: 0, y: 0, width: 1200, height: 750))
+        self.view.autoresizingMask = [.width, .height]
     }
     
     override func viewDidLoad() {
@@ -77,17 +95,38 @@ class UnifiedViewController: NSViewController {
     func setupTopBar() {
         let topBar = NSView(frame: NSRect(x: 0, y: 700, width: 1200, height: 50))
         topBar.wantsLayer = true
-        topBar.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
+        topBar.layer?.backgroundColor = NSColor(calibratedRed: 0.98, green: 0.98, blue: 0.99, alpha: 1.0).cgColor
+        topBar.autoresizingMask = [.width, .minYMargin]  // 固定在顶部，宽度自适应
+        
+        // 添加底部阴影
+        topBar.shadow = NSShadow()
+        topBar.layer?.shadowColor = NSColor.black.cgColor
+        topBar.layer?.shadowOpacity = 0.05
+        topBar.layer?.shadowOffset = NSSize(width: 0, height: -1)
+        topBar.layer?.shadowRadius = 2
+        
+        // 应用图标 - 使用 SF Symbols
+        let appIconView = NSImageView(frame: NSRect(x: 20, y: 10, width: 30, height: 30))
+        let config = NSImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        if let image = NSImage(systemSymbolName: "sparkles", accessibilityDescription: nil)?.withSymbolConfiguration(config) {
+            appIconView.image = image
+            appIconView.symbolConfiguration = config
+            appIconView.contentTintColor = NSColor.controlAccentColor
+        }
+        topBar.addSubview(appIconView)
         
         let titleLabel = NSTextField(labelWithString: "CleanMyMac")
-        titleLabel.frame = NSRect(x: 20, y: 15, width: 200, height: 24)
+        titleLabel.frame = NSRect(x: 58, y: 15, width: 200, height: 24)
         titleLabel.font = NSFont.systemFont(ofSize: 18, weight: .bold)
+        titleLabel.textColor = NSColor.labelColor
         topBar.addSubview(titleLabel)
         
         totalSizeLabel = NSTextField(labelWithString: "")
         totalSizeLabel.frame = NSRect(x: 900, y: 18, width: 280, height: 20)
         totalSizeLabel.alignment = .right
         totalSizeLabel.font = NSFont.systemFont(ofSize: 13)
+        totalSizeLabel.textColor = NSColor.secondaryLabelColor
+        totalSizeLabel.autoresizingMask = [.minXMargin]  // 固定在右侧
         topBar.addSubview(totalSizeLabel)
         
         view.addSubview(topBar)
@@ -98,13 +137,15 @@ class UnifiedViewController: NSViewController {
         sidebarScrollView.hasVerticalScroller = true
         sidebarScrollView.borderType = .noBorder
         sidebarScrollView.wantsLayer = true
-        sidebarScrollView.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
+        sidebarScrollView.layer?.backgroundColor = NSColor(calibratedRed: 0.95, green: 0.95, blue: 0.97, alpha: 1.0).cgColor
+        sidebarScrollView.autoresizingMask = [.height]  // 高度自适应
         
         sidebarTableView = NSTableView(frame: sidebarScrollView.bounds)
         sidebarTableView.headerView = nil
-        sidebarTableView.rowHeight = 50
-        sidebarTableView.backgroundColor = NSColor.controlBackgroundColor
+        sidebarTableView.rowHeight = 60
+        sidebarTableView.backgroundColor = NSColor.clear
         sidebarTableView.selectionHighlightStyle = .regular
+        sidebarTableView.intercellSpacing = NSSize(width: 0, height: 4)
         
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("module"))
         column.width = 250
@@ -119,12 +160,14 @@ class UnifiedViewController: NSViewController {
         // 分隔线
         let separator = NSBox(frame: NSRect(x: 250, y: 0, width: 1, height: 700))
         separator.boxType = .separator
+        separator.autoresizingMask = [.height]  // 高度自适应
         view.addSubview(separator)
     }
     
     func setupContentArea() {
         contentView = NSView(frame: NSRect(x: 251, y: 0, width: 949, height: 700))
         contentView.wantsLayer = true
+        contentView.autoresizingMask = [.width, .height]  // 宽度和高度都自适应
         view.addSubview(contentView)
     }
     
@@ -159,7 +202,7 @@ class UnifiedViewController: NSViewController {
         
         currentViewController = viewController
         viewController.view.frame = contentView.bounds
-        viewController.view.autoresizingMask = [.width, .height]
+        viewController.view.autoresizingMask = [.width, .height]  // 关键：让子视图也自动缩放
         contentView.addSubview(viewController.view)
         
         sidebarTableView.reloadData()
@@ -177,19 +220,49 @@ extension UnifiedViewController: NSTableViewDataSource, NSTableViewDelegate {
         let cell = NSTableCellView()
         let module = modules[row]
         
-        let imageView = NSImageView(frame: NSRect(x: 15, y: 10, width: 30, height: 30))
-        imageView.image = NSImage(systemSymbolName: module.icon, accessibilityDescription: nil)
-        imageView.contentTintColor = selectedModule == module ? NSColor.controlAccentColor : NSColor.secondaryLabelColor
+        // 背景视图
+        let backgroundView = NSView(frame: NSRect(x: 8, y: 4, width: 234, height: 52))
+        backgroundView.wantsLayer = true
+        
+        if selectedModule == module {
+            backgroundView.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.15).cgColor
+            backgroundView.layer?.cornerRadius = 8
+        } else {
+            backgroundView.layer?.backgroundColor = NSColor.clear.cgColor
+        }
+        cell.addSubview(backgroundView)
+        
+        // 图标背景
+        let iconBackground = NSView(frame: NSRect(x: 20, y: 16, width: 36, height: 36))
+        iconBackground.wantsLayer = true
+        iconBackground.layer?.cornerRadius = 8
+        
+        if selectedModule == module {
+            iconBackground.layer?.backgroundColor = NSColor.controlAccentColor.cgColor
+        } else {
+            iconBackground.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.1).cgColor
+        }
+        cell.addSubview(iconBackground)
+        
+        // 图标
+        let imageView = NSImageView(frame: NSRect(x: 28, y: 24, width: 20, height: 20))
+        if let image = NSImage(systemSymbolName: module.icon, accessibilityDescription: nil) {
+            imageView.image = image
+            imageView.contentTintColor = selectedModule == module ? NSColor.white : NSColor.controlAccentColor
+            imageView.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        }
         cell.addSubview(imageView)
         
+        // 标题
         let titleLabel = NSTextField(labelWithString: module.rawValue)
-        titleLabel.frame = NSRect(x: 55, y: 18, width: 180, height: 18)
-        titleLabel.font = NSFont.systemFont(ofSize: 14, weight: selectedModule == module ? .semibold : .regular)
+        titleLabel.frame = NSRect(x: 65, y: 28, width: 170, height: 20)
+        titleLabel.font = NSFont.systemFont(ofSize: 14, weight: selectedModule == module ? .semibold : .medium)
         titleLabel.textColor = selectedModule == module ? NSColor.labelColor : NSColor.secondaryLabelColor
         cell.addSubview(titleLabel)
         
+        // 描述
         let descLabel = NSTextField(labelWithString: module.description)
-        descLabel.frame = NSRect(x: 55, y: 4, width: 180, height: 14)
+        descLabel.frame = NSRect(x: 65, y: 10, width: 170, height: 16)
         descLabel.font = NSFont.systemFont(ofSize: 11)
         descLabel.textColor = NSColor.tertiaryLabelColor
         cell.addSubview(descLabel)
@@ -253,6 +326,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var viewController: UnifiedViewController!
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // 创建窗口
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1200, height: 750),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
@@ -262,6 +336,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.title = "CleanMyMac - 系统清理工具"
         window.center()
         window.minSize = NSSize(width: 1000, height: 650)
+        window.maxSize = NSSize(width: 1600, height: 1000)
+        
+        // 设置窗口外观
+        window.titlebarAppearsTransparent = false
+        window.backgroundColor = NSColor.windowBackgroundColor
+        
+        // 设置窗口级别
+        window.level = .normal
         
         viewController = UnifiedViewController()
         window.contentViewController = viewController
@@ -271,6 +353,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        return true
+    }
+    
+    func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
         return true
     }
 }
