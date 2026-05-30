@@ -1,0 +1,42 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Build artifacts
+build/
+*.app
+
+# History files (VSCode extension)
+.history/
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+DerivedData/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+
+# Swift Package Manager
+.build/
+Packages/
+*.xcodeproj
+
+# CocoaPods
+Pods/
+
+# Temporary files
+*.swp
+*.swo
+*~
+.*.sw[a-z]
+
+# IDE
+.vscode/
+.idea/
+
+# Images (optional - uncomment if you don't want to track images)
+# image/
